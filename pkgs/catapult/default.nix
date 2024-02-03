@@ -2,6 +2,8 @@
   stdenv,
   fetchurl,
   lib,
+  autoPatchelfHook,
+  pkgs ? import <nixpkgs> {}
 }:
 stdenv.mkDerivation rec {
   name = "catapult";
@@ -12,12 +14,25 @@ stdenv.mkDerivation rec {
     sha256 = "sha256:1g0fgaha4macf01d7xsgnl9qwmz8chdkfs55lz4i75i57ay92iwg";
   };
 
-  phases = ["installPhase"];
+  nativeBuildInputs = [
+    autoPatchelfHook
+  ];
+
+  buildInputs = with pkgs; [
+    libGL
+    xorg.libXrandr
+    xorg.libXrender
+    xorg.libXcursor
+    xorg.libXi
+    xorg.libXinerama
+  ];
+
+  dontUnpack = true;
 
   installPhase = ''
-    mkdir -p $out/bin
-    cp $src $out/bin/catapult
-    chmod +x $out/bin/catapult
+    runHook preInstall
+    install -m755 -D $src $out/bin/catapult
+    runHook postInstall
   '';
   
   meta = with lib; {
