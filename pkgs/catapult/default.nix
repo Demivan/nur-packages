@@ -4,6 +4,7 @@
   fetchurl,
   lib,
   makeDesktopItem,
+  copyDesktopItems,
   godot3-headless,
   godot3-export-templates,
   libGL,
@@ -27,6 +28,7 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [
     godot3-headless
+    copyDesktopItems
   ];
 
   buildInputs = [
