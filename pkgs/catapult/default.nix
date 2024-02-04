@@ -1,14 +1,16 @@
 {
   stdenv,
   fetchFromGitHub,
+  fetchurl,
   lib,
+  makeDesktopItem,
   godot3-headless,
   godot3-export-templates,
   libGL,
   xorg,
 }:
 stdenv.mkDerivation rec {
-  name = "catapult";
+  pname = "catapult";
   version = "23.12a";
 
   src = fetchFromGitHub {
@@ -16,6 +18,11 @@ stdenv.mkDerivation rec {
     repo = "Catapult";
     rev = version;
     sha256 = "sha256-HMQqfZ3s4l15qRYs6PBFCPA5UOQ8KBeDwcckHWKZ3dU=";
+  };
+
+  icon = fetchurl {
+    url = "https://raw.githubusercontent.com/qrrk/Catapult/23.12a/icons/appicon.svg";
+    sha256 = "sha256-4JfzFH6WVw516eNWEUpCmJeE39yYOIoyYVF7SByFDjk=";
   };
 
   nativeBuildInputs = [
@@ -54,6 +61,18 @@ stdenv.mkDerivation rec {
 
     runHook postBuild
   '';
+
+  desktopItems = [
+    (makeDesktopItem {
+      name = "catapult";
+      exec = pname;
+      icon = icon;
+      comment = meta.description;
+      desktopName = "Catapult";
+      genericName = "catapult";
+      categories  = [ "Game" ];
+    })
+  ];
   
   meta = with lib; {
     description = "A cross-platform launcher for Cataclysm: DDA and BN";
