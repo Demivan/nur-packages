@@ -1,24 +1,28 @@
 {
   stdenv,
-  fetchurl,
+  fetchFromGitHub,
   lib,
-  autoPatchelfHook,
-  pkgs ? import <nixpkgs> {}
+  godot3-headless,
+  godot3-export-templates,
+  libGL,
+  xorg,
 }:
 stdenv.mkDerivation rec {
   name = "catapult";
   version = "23.12a";
 
-  src = fetchurl {
-    url = "https://github.com/qrrk/Catapult/releases/download/${version}/catapult-linux-x64-${version}";
-    sha256 = "sha256:1g0fgaha4macf01d7xsgnl9qwmz8chdkfs55lz4i75i57ay92iwg";
+  src = fetchFromGitHub {
+    owner = "qrrk";
+    repo = "Catapult";
+    rev = version;
+    sha256 = "sha256-HMQqfZ3s4l15qRYs6PBFCPA5UOQ8KBeDwcckHWKZ3dU=";
   };
 
   nativeBuildInputs = [
-    autoPatchelfHook
+    godot3-headless
   ];
 
-  buildInputs = with pkgs; [
+  buildInputs = [
     libGL
     xorg.libXrandr
     xorg.libXrender
@@ -27,12 +31,28 @@ stdenv.mkDerivation rec {
     xorg.libXinerama
   ];
 
-  dontUnpack = true;
+  buildPhase = ''
+    runHook preBuild
 
-  installPhase = ''
-    runHook preInstall
-    install -m755 -D $src $out/bin/catapult
-    runHook postInstall
+    # ERROR: Could not create directory: /homeless-shelter
+    export HOME=$TMPDIR
+
+    # Link the export-templates to the expected location. The --export commands
+    # expects the template-file at .../templates/3.5.2.stable/linux_x11_64_release
+    # with 3.5.2 being the version of godot.
+    mkdir -p $HOME/.local/share/godot
+    ln -s ${godot3-export-templates}/share/godot/templates $HOME/.local/share/godot
+
+    mkdir -p $TMPDIR/src
+
+    cp $src/. $TMPDIR/src -r
+    cp ${./export_presets.cfg} $TMPDIR/src/export_presets.cfg
+    chmod -R 777 $TMPDIR/src
+
+    mkdir -p $out/bin
+    godot3-headless --path $TMPDIR/src --export "Linux/X11" $out/bin/catapult
+
+    runHook postBuild
   '';
   
   meta = with lib; {
